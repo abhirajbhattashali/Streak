@@ -42,6 +42,14 @@ enum Month: Int, CaseIterable {
         case .december: return "December"
         }
     }
+    static func from(string: String) -> Month? {
+            for month in Month.allCases {
+                if month.name == string {
+                    return month
+                }
+            }
+            return nil
+        }
 }
 
 
@@ -63,26 +71,54 @@ struct StreakView: View {
     let userStreakDays: Set<Int> = [1, 2, 4, 5, 7, 8, 11, 15, 21, 22, 25, 28, 29]
     
     
-    @State var month:Month
-    @State var year = 2023
+    @State var selectedYear: Int = Calendar.current.component(.year, from: Date())
+    @State var selectedMonth: String = DateFormatter().monthSymbols[Calendar.current.component(.month, from: Date()) - 1]
+    
+    @State var selectedMonthObject:Month = Month.january
+    
+    @StateObject var viewModel = StreakViewModel()
     
 
     
     var body: some View {
         VStack(spacing: 10) {
-            Text("Your \(month.name) Streak")
+            Text("Your \(selectedMonthObject.name) Streak")
                 .font(.title)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(20)
+            
+            HStack(alignment: .top) {
+                Picker("Month",selection:$selectedMonth){
+                    ForEach(viewModel.months, id: \.self) { month in
+                        Text(month).tag(month)
+                    }
+                }.pickerStyle(MenuPickerStyle())
+                    .onChange(of:selectedMonth) {newValue in
+                        selectedMonthObject = Month.from(string: newValue) ?? Month.january
+                    }
+                    
+                    
+                
+                
+                Picker("Year", selection:$selectedYear) {
+                               ForEach(viewModel.years, id: \.self) { year in
+                                   Text("\(year)").tag(year)
+                               }
+                           }
+                           .pickerStyle(MenuPickerStyle())
+                           
+                           
+                
+            }
             
             LazyVGrid(columns: Array(repeating: GridItem(.adaptive(minimum: 40)), count: 7), spacing: 4) {
        
                 
                 // Actual days of the month
-                ForEach(1...month.numberOfDays(in: year), id: \.self) { day in
-                    if userStreakDays.contains(day) {
-                        Text("\(day)")
-                            .frame(width: 30, height: 30)
+                ForEach(1...selectedMonthObject.numberOfDays(in:selectedYear), id: \.self) { day in
+                   if userStreakDays.contains(day) {
+                       Text("\(day)")
+                           .frame(width: 30, height: 30)
                             .background(.teal)
                             .cornerRadius(5)
                             .foregroundColor(.white)
@@ -92,7 +128,7 @@ struct StreakView: View {
                             .background(Color.gray.opacity(0.2))
                             .cornerRadius(5)
                             .foregroundColor(.gray)
-                    }
+                   }
                 }
             }
             
@@ -104,7 +140,7 @@ struct StreakView: View {
 }
 
 #Preview{
-    StreakView(month: Month.january, year: 2023)
+    StreakView()
     }
 
 
